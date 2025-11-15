@@ -1,1 +1,2 @@
 # Proyecto-Individual-Alessandro
+Readme del Proyecto individual para el curso Herramientas para Ciencias de Datos I, donde se hará un análisis descriptivo de los sobrevivientes al hundimiento del Titanic.

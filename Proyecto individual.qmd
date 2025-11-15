@@ -1,0 +1,157 @@
+---
+title: "Proyecto individual"
+author: "Alessandro Umaña Vega"
+format: html
+editor: visual
+---
+
+##Librerias
+```{r}
+#Librerías que se pueden usar a lo largo del código
+library(readr)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(titanic)
+```
+
+#Base de datos
+```{r}
+#Cargar la base de datos y asignarle un nombre
+View(titanic_train)
+titanic <- titanic_train
+```
+
+##Arreglo de la base
+```{r}
+#usamos colnames para identificar el nombre de todas las columnas
+colnames(titanic)
+
+#Corregir el tipo de variables de algunas columnas
+data <- titanic %>% 
+  mutate(
+    Survived = factor(Survived, labels = c("No", "Sí")),
+    Sex = factor(Sex, labels = c("Mujer", "Hombre")),
+    Pclass = factor(Pclass, labels = c("1ra Clase", "2da Clase", "3ra Clase"))
+  )
+View(titanic)
+
+#un resumen de las variables
+summary(titanic)
+
+```
+
+#Valores faltantes
+```{r}
+#pse observa NA en la variable Age, entonces usamos la función sum y is.na para saber cuantos NA hay en total y una tabla para ver cuantos NA de edad igual, pero dividido en sexo y clase
+sum(is.na(titanic$Age))
+table(titanic$Sex, is.na(titanic$Age))
+table(titanic$Pclass, is.na(titanic$Age))
+```
+
+
+```{r}
+#imputamos los valores faltantes por la media de edad por clase de pasajeros.
+#primero calculamos la mediana de la edad por clase de pasajero
+media1 <- median(titanic$Age[titanic$Pclass == 1], na.rm = TRUE)
+media2 <- median(titanic$Age[titanic$Pclass == 2], na.rm = TRUE)
+media3 <- median(titanic$Age[titanic$Pclass == 3], na.rm = TRUE)
+
+#creamos una columna que se llame age_imputada para verificar que efectivamente si se corrigió y de manera correcta
+titanic$Age_imputada <- titanic$Age
+
+#hacemos un for que pase por todas las filas de la base de datos y con un if si hay un na en age entonces verificamos la clase del pasajero y se imputa por la media correspondiente
+for (i in 1:nrow(titanic)) {
+  if (is.na(titanic$Age_imputada[i]) && titanic$Pclass[i] == 1) {
+    titanic$Age_imputada[i] <- media1
+  } else if (is.na(titanic$Age_imputada[i]) && titanic$Pclass[i] == 2) {
+    titanic$Age_imputada[i] <- media2
+  } else if (is.na(titanic$Age_imputada[i]) && titanic$Pclass[i] == 3) {
+    titanic$Age_imputada[i] <- media3
+  }
+}
+
+
+#Arreglamos la base de datos eliminando la columna age(no imputada) con select y cambiando el nombre de la columna de age_imputada a solo age con la función rename.
+titanic <- titanic %>%
+  select(-Age) %>%      
+  rename(Age = Age_imputada)
+
+View(titanic)
+```
+
+
+#Gráficos
+```{r}
+#usamos la estrctura de ggplot para crear un gráfico de barras
+ggplot(data, aes(x = Sex, fill = Survived)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Supervivencia por sexo",
+    x = "Sexo",
+    y = "Proporción"
+  ) +
+  scale_fill_brewer(palette = "Set1") +
+  theme_minimal()
+```
+
+```{r}
+#usamos la estrctura de ggplot para crear un gráfico de barras
+ggplot(data, aes(x = Pclass, fill = Survived)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Supervivencia por clase",
+    x = "Clase",
+    y = "Proporción"
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  theme_minimal()
+```
+```{r}
+#usamos la estrctura de ggplot para crear un gráfico de puntos con dispersión
+ggplot(data, aes(x = Age, y = Survived, color = Sex)) +
+  geom_jitter(alpha = 0.4, height = 0.1) +
+  labs(
+    title = "Edad y supervivencia",
+    x = "Edad",
+    y = "Supervivencia"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+#usamos la estrctura de ggplot para crear un gráfico de densidad
+ggplot(data, aes(x = Age, fill = Pclass)) +
+  geom_density(alpha = 0.5) +
+  labs(
+    title = "Distribución de edades por clase",
+    x = "Edad",
+    y = "Densidad"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+#usamos la estrctura de ggplot para crear un histograma
+ggplot(data, aes(x = Age, fill = Survived)) +
+  geom_histogram(bins = 30, alpha = 0.7) +
+  labs(
+    title = "Distribución de edades según supervivencia",
+    x = "Edad",
+    y = "Conteo"
+  ) +
+  theme_minimal()
+```
+
+
+#Correlación
+```{r}
+#Seleccionamos solo las variables númericas que nos ofrece la base de datos y que son útiles para nuestro trabajo
+variables_num <- titanic %>%
+  select(Survived, Pclass, Age, SibSp, Parch, Fare)
+
+#Usamos la función corr que hace un cálculo de correlación variable con variable y nos devuelve una matriz de correlación, donde tenemos que poner un data frame y se puede usar "use = " para diferentes funciones como eliminar filas con NA, tmar en cuenta los NA o donde x y y tengan valores válidos.
+correlacion <- cor(variables_num)
+correlacion
+```
+
